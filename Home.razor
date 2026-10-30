@@ -1,0 +1,78 @@
+﻿@page "/"
+@using SearchAgentValorantAPI.Models
+@inject HttpClient Http
+
+<PageTitle>Buscar Agente Valorant</PageTitle>
+
+<h3>Busca de Agentes - Valorant</h3>
+
+<div style="margin-bottom: 20px;">
+    <label for="uuidInput">UUID do Agente:</label>
+    <input id="uuidInput" @bind="agentUuid" style="width: 350px; margin-right: 10px;" placeholder="Insira o UUID" />
+    <button @onclick="BuscarAgente">Buscar</button>
+</div>
+
+@if (isLoading)
+{
+    <p><em>Buscando dados na API...</em></p>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p style="color: red;">@errorMessage</p>
+}
+else if (agent != null)
+{
+    <div style="border: 1px solid #444; padding: 20px; border-radius: 10px; max-width: 500px; background-color: #f9f9f9;">
+        <h2>@agent.DisplayName</h2>
+        <p><strong>Descrição:</strong> @agent.Description</p>
+        
+        @if (!string.IsNullOrEmpty(agent.FullPortrait))
+        {
+            <img src="@agent.FullPortrait" alt="@agent.DisplayName" style="width: 100%; border-radius: 8px;" />
+        }
+    </div>
+}
+
+@code {
+    
+    private string agentUuid = "e370fa57-4757-3604-3648-499e1f642d3f"; 
+    private AgentData? agent;
+    private bool isLoading;
+    private string errorMessage = string.Empty;
+
+    private async Task BuscarAgente()
+    {
+        if (string.IsNullOrWhiteSpace(agentUuid))
+        {
+            errorMessage = "Por favor, insira um UUID.";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = string.Empty;
+        agent = null;
+
+        try
+        {
+            var url = $"https://valorant-api.com/v1/agents/{agentUuid}";
+            var response = await Http.GetFromJsonAsync<ValorantApiResponse>(url);
+
+            if (response != null && response.Data != null)
+            {
+                agent = response.Data;
+            }
+            else
+            {
+                errorMessage = "Agente não encontrado ou retorno inválido.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro de requisição: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
